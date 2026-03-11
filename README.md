@@ -1,188 +1,105 @@
-workspace "Сервис доставки" "Вариант 6" {
-    model {
-        // Люди
-        person "Пользователь" "Отправитель или получатель посылки" {
-            tags "Person"
-        }
+# Домашнее задание 01: Документирование архитектуры в Structurizr
 
-        // Внешние системы
-        softwareSystem "Платежная система" "Обрабатывает платежи за доставку" {
-            tags "External System"
-        }
-        softwareSystem "Служба уведомлений" "Отправляет email и SMS уведомления" {
-            tags "External System"
-        }
+**Вариант 6: Сервис доставки (аналог CDEK)**
 
-        // Наша система
-        softwareSystem "Сервис доставки" "Позволяет пользователям создавать посылки и оформлять доставку" {
-            tags "Software System"
+## Описание системы
 
-            // Контейнеры
-            container "Web Application" "Предоставляет интерфейс пользователя" "React, SPA" {
-                tags "Container"
-            }
+Необходимо разработать сервис доставки, который позволяет пользователям создавать посылки и оформлять доставку от одного пользователя другому. Система должна хранить данные о пользователях, посылках и доставках, а также предоставлять API для выполнения основных операций.
 
-            container "User Service" "Управление пользователями" "Spring Boot, REST API, Java" {
-                tags "Container"
-            }
-            container "Parcel Service" "Управление посылками" "Spring Boot, REST API, Java" {
-                tags "Container"
-            }
-            container "Delivery Service" "Управление доставками" "Spring Boot, REST API, Java" {
-                tags "Container"
-            }
-            container "Payment Service" "Интеграция с платежной системой" "Spring Boot, REST API, Java" {
-                tags "Container"
-            }
-            container "Notification Service" "Отправка уведомлений" "Spring Boot, REST API, Java" {
-                tags "Container"
-            }
+### Требования к данным
 
-            // Базы данных
-            container "User Database" "Хранит данные пользователей" "PostgreSQL" {
-                tags "Database"
-            }
-            container "Parcel Database" "Хранит данные посылок" "PostgreSQL" {
-                tags "Database"
-            }
-            container "Delivery Database" "Хранит данные доставок" "PostgreSQL" {
-                tags "Database"
-            }
-        }
+- **Пользователь**: информация о пользователе (логин, имя, фамилия и т.д.)
+- **Посылка**: описание посылки (вес, габариты, содержимое)
+- **Доставка**: связь между отправителем, получателем и посылкой, статус доставки
 
-        // Отношения (контекст)
-        Пользователь -> "Сервис доставки" "Использует для создания посылок и доставок"
-        "Сервис доставки" -> "Платежная система" "Выполняет платежи через"
-        "Сервис доставки" -> "Служба уведомлений" "Отправляет уведомления через"
+### Требования к API
 
-        // Отношения между контейнерами
-        "Web Application" -> "User Service" "Вызывает API" "HTTPS/REST"
-        "Web Application" -> "Parcel Service" "Вызывает API" "HTTPS/REST"
-        "Web Application" -> "Delivery Service" "Вызывает API" "HTTPS/REST"
+- Создание нового пользователя
+- Поиск пользователя по логину
+- Поиск пользователя по маске имени и фамилии
+- Создание посылки
+- Получение посылок пользователя
+- Создание доставки от пользователя к пользователю
+- Получение информации о доставке по получателю
+- Получение информации о доставке по отправителю
 
-        "User Service" -> "User Database" "Читает/записывает данные" "JDBC"
-        "Parcel Service" -> "Parcel Database" "Читает/записывает данные" "JDBC"
-        "Delivery Service" -> "Delivery Database" "Читает/записывает данные" "JDBC"
+## Роли пользователей и внешние системы
 
-        "Delivery Service" -> "User Service" "Проверяет существование пользователей" "HTTPS/REST"
-        "Delivery Service" -> "Parcel Service" "Получает данные посылки" "HTTPS/REST"
-        "Delivery Service" -> "Payment Service" "Инициирует оплату" "HTTPS/REST"
-        "Delivery Service" -> "Notification Service" "Запрашивает отправку уведомлений" "HTTPS/REST"
+### Роли пользователей
 
-        "Payment Service" -> "Платежная система" "Отправляет запросы на оплату" "HTTPS/REST"
-        "Notification Service" -> "Служба уведомлений" "Отправляет письма/SMS" "SMTP/HTTP"
-    }
+- **Отправитель** – пользователь, создающий посылку и инициирующий доставку.
+- **Получатель** – пользователь, которому адресована посылка.
 
-    views {
-        // Диаграмма System Context
-        systemContext "Сервис доставки" "Диаграмма контекста системы" {
-            include *
-            autoLayout
-        }
+Обе роли являются обычными пользователями системы, но выполняют разные функции. На контекстной диаграмме они объединены в одного актора «Пользователь», так как одна и та же учетная запись может выступать в обеих ролях.
 
-        // Диаграмма Container
-        container "Сервис доставки" "Диаграмма контейнеров" {
-            include *
-            autoLayout
-        }
+### Внешние системы
 
-        // Динамическая диаграмма для сценария "Создание доставки"
-        dynamic "Создание доставки" "Последовательность взаимодействия при создании доставки" {
-            // Участники: Пользователь, Web Application, Delivery Service, User Service, Parcel Service, Payment Service, Notification Service, их БД, внешние системы.
-            // Используем элементы, которые были описаны.
-            // Важно: в dynamic view нужно ссылаться на элементы по их ID или имени. Используем имена, так как в DSL мы их задали.
-            // Укажем последовательность шагов.
-            
-            // Шаг 1: Пользователь отправляет запрос через Web Application
-            Пользователь -> "Web Application" "Запрашивает создание доставки"
+- **Платежная система** – для обработки оплаты доставки (например, Stripe, PayPal).
+- **Служба уведомлений** – для отправки email/SMS-уведомлений пользователям (например, SendGrid, Twilio).
+- (Опционально) **Гео-сервис** – для расчета расстояния и стоимости доставки (не включен в диаграммы для простоты).
 
-            // Шаг 2: Web Application вызывает Delivery Service
-            "Web Application" -> "Delivery Service" "POST /deliveries"
+## Основные задачи пользователей
 
-            // Шаг 3: Delivery Service проверяет отправителя через User Service
-            "Delivery Service" -> "User Service" "GET /users/{senderId}"
+### Отправитель
 
-            // Шаг 4: User Service обращается к своей БД
-            "User Service" -> "User Database" "SELECT"
+- Зарегистрироваться / войти в систему
+- Создать посылку (указать вес, габариты)
+- Создать доставку (выбрать получателя, прикрепить посылку)
+- Оплатить доставку
+- Отслеживать статус доставки
 
-            // Шаг 5: User Service возвращает данные отправителя
-            "User Service" -> "Delivery Service" "Данные отправителя"
+### Получатель
 
-            // Шаг 6: Delivery Service проверяет получателя
-            "Delivery Service" -> "User Service" "GET /users/{receiverId}"
-            "User Service" -> "User Database" "SELECT"
-            "User Service" -> "Delivery Service" "Данные получателя"
+- Получить уведомление о предстоящей доставке
+- Просмотреть информацию о входящей доставке
+- (Возможно) подтвердить получение посылки
 
-            // Шаг 7: Delivery Service получает данные посылки от Parcel Service
-            "Delivery Service" -> "Parcel Service" "GET /parcels/{parcelId}"
-            "Parcel Service" -> "Parcel Database" "SELECT"
-            "Parcel Service" -> "Delivery Service" "Данные посылки"
+## Контейнеры системы
 
-            // Шаг 8: Delivery Service создает запись о доставке в своей БД
-            "Delivery Service" -> "Delivery Database" "INSERT into deliveries"
+Для реализации выбрана микросервисная архитектура, где каждый функциональный блок выделен в отдельный контейнер.
 
-            // Шаг 9: Delivery Service вызывает Payment Service для оплаты
-            "Delivery Service" -> "Payment Service" "POST /payments"
+| Контейнер           | Ответственность                                       | Технологии                | Взаимодействие                          |
+| ------------------- | ----------------------------------------------------- | ------------------------- | --------------------------------------- |
+| Web Application     | Предоставляет пользовательский интерфейс (SPA)        | React, HTTPS              | Вызовы API к сервисам                   |
+| User Service        | Управление пользователями (регистрация, поиск)        | Spring Boot, REST, Java   | HTTP к БД, вызовы от других сервисов    |
+| Parcel Service      | Управление посылками (создание, получение списка)     | Spring Boot, REST, Java   | HTTP к БД                                |
+| Delivery Service    | Управление доставками (создание, получение по ролям)  | Spring Boot, REST, Java   | HTTP к БД, вызовы User, Parcel, Payment, Notification |
+| Payment Service     | Интеграция с внешней платежной системой               | Spring Boot, REST, Java   | HTTPS к внешней платежной системе       |
+| Notification Service| Отправка уведомлений через внешние сервисы            | Spring Boot, REST, Java   | SMTP/HTTP к службе уведомлений          |
+| User Database       | Хранение данных пользователей                          | PostgreSQL                | JDBC                                     |
+| Parcel Database     | Хранение данных посылок                                | PostgreSQL                | JDBC                                     |
+| Delivery Database   | Хранение данных доставок                               | PostgreSQL                | JDBC                                     |
 
-            // Шаг 10: Payment Service взаимодействует с внешней платежной системой
-            "Payment Service" -> "Платежная система" "Проведение платежа"
+## Взаимодействие контейнеров
 
-            // Шаг 11: Платежная система возвращает результат
-            "Платежная система" -> "Payment Service" "Подтверждение оплаты"
+- Клиент (браузер) через Web Application отправляет запросы к User Service, Parcel Service и Delivery Service.
+- Delivery Service для выполнения операций обращается к User Service (проверка пользователей), Parcel Service (получение данных посылки), Payment Service (оплата) и Notification Service (уведомления).
+- Payment Service вызывает внешнюю платежную систему.
+- Notification Service вызывает внешнюю службу уведомлений.
+- Каждый сервис работает с собственной базой данных.
 
-            // Шаг 12: Payment Service возвращает результат Delivery Service
-            "Payment Service" -> "Delivery Service" "Результат оплаты"
+## Архитектурно значимый сценарий: создание доставки
 
-            // Шаг 13: Delivery Service обновляет статус доставки
-            "Delivery Service" -> "Delivery Database" "UPDATE status"
+Выбран сценарий "Создание доставки", так как он затрагивает большинство контейнеров и внешних систем.
 
-            // Шаг 14: Delivery Service вызывает Notification Service для уведомлений
-            "Delivery Service" -> "Notification Service" "POST /notifications"
+**Шаги сценария:**
 
-            // Шаг 15: Notification Service отправляет уведомления через внешнюю службу
-            "Notification Service" -> "Служба уведомлений" "Отправка email/SMS"
+1. Пользователь (отправитель) через Web Application инициирует создание доставки.
+2. Web Application отправляет POST-запрос к Delivery Service с данными (отправитель, получатель, посылка).
+3. Delivery Service проверяет существование отправителя, вызывая User Service.
+4. User Service обращается к своей БД и возвращает данные отправителя.
+5. Delivery Service аналогично проверяет получателя через User Service.
+6. Delivery Service проверяет существование посылки (или создает новую) через Parcel Service.
+7. Parcel Service обращается к своей БД и возвращает/создает посылку.
+8. Delivery Service рассчитывает стоимость доставки (упрощенно — внутренняя логика).
+9. Delivery Service создает запись о доставке в своей БД со статусом "ожидание оплаты".
+10. Delivery Service вызывает Payment Service для проведения оплаты.
+11. PaymentService взаимодействует с внешней платежной системой и получает подтверждение.
+12. Payment Service возвращает результат в Delivery Service.
+13. Delivery Service обновляет статус доставки на "оплачено".
+14. Delivery Service вызывает Notification Service для отправки уведомлений отправителю и получателю.
+15. Notification Service отправляет уведомления через внешнюю службу уведомлений.
+16. Delivery Service возвращает успешный ответ Web Application.
+17. Web Application отображает пользователю информацию о созданной доставке.
 
-            // Шаг 16: Notification Service возвращает подтверждение
-            "Служба уведомлений" -> "Notification Service" "Уведомления отправлены"
-            "Notification Service" -> "Delivery Service" "Уведомления отправлены"
-
-            // Шаг 17: Delivery Service возвращает успешный ответ Web Application
-            "Delivery Service" -> "Web Application" "201 Created"
-
-            // Шаг 18: Web Application отображает результат пользователю
-            "Web Application" -> Пользователь "Информация о созданной доставке"
-
-            autoLayout
-        }
-
-        // Дефолтные стили
-        styles {
-            element "Person" {
-                background #08427b
-                color #ffffff
-                shape person
-            }
-            element "Software System" {
-                background #1168bd
-                color #ffffff
-            }
-            element "External System" {
-                background #999999
-                color #ffffff
-            }
-            element "Container" {
-                background #438dd5
-                color #ffffff
-                shape roundedbox
-            }
-            element "Database" {
-                background #438dd5
-                color #ffffff
-                shape cylinder
-            }
-        }
-
-        // Описание диаграмм
-        description "Сервис доставки" "Система позволяет пользователям создавать посылки и оформлять доставку."
-    }
-}
+Динамическая диаграмма, иллюстрирующая этот сценарий, представлена в Structurizr DSL (view с типом dynamic).
